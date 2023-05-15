@@ -1,0 +1,274 @@
+{% extends 'user/layout/base.html' %}
+
+{% block style %}
+
+.custom-file-input::-webkit-file-upload-button {
+    visibility: hidden;
+  }
+  
+  .custom-file-input::before {
+    content: 'Choose file';
+    display: inline-block;
+    background: #007bff;
+    color: #fff;
+    border-radius: 4px;
+    padding: 8px 20px;
+    outline: none;
+    white-space: nowrap;
+    -webkit-user-select: none;
+    cursor: pointer;
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-color: #007bff;
+  }
+  
+  .custom-file-input:hover::before {
+    border-color: #0069d9;
+    background-color: #0069d9;
+    color: #fff;
+  }
+  
+  .custom-file-input:active::before {
+    background-color: #0062cc;
+    border-color: #005cbf;
+  }
+
+ .upload_button{
+
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+    padding: 12PX 96PX;
+  }
+  
+{% endblock %}
+
+
+{% block content %}
+   
+    <div class="container">
+        <div class="row">
+          <div class="col-3">
+            {% comment %} <div class="custom-file mb-3">
+                <input type="file" class="custom-file-input" id="customFile">
+                <label class="custom-file-label" for="customFile">Choose file</label>
+              </div> {% endcomment %}
+             
+           
+          </div>
+          <div class="col-5" style="text-align: center;">
+           
+            <h1>PDF to WORD Converter</h1>
+            <p>Convert your PDF to WORD documents with incredible accuracy.
+                Powered by Solid Documents.</p>
+                <div class=""  style="display:none" id="download_button">
+                    <a href="javascript:downloadFile();" class="btn btn-danger" style="padding: 12PX 74PX;
+                    font-size: 20px;
+                    text-align: center;">Download</a>
+                   
+                  
+                  </div>
+                <form method="POST" action="" enctype="multipart/form-data" id="upload_form">
+                    {% csrf_token %} 
+                    <div class="" id="select_button">
+                        <label class="upload_button" for="fileInput"  style="
+                        color: #fff;
+                        background-color: #dc3545;
+                        border-color: #dc3545;
+                        padding: 12PX 74PX;
+                        font-size: 20px;
+                        text-align: center;">Select PDF File</label>
+                      
+                      </div>
+                    <div>
+                        <input type="file" class="form-control" name="pdf" id="fileInput" accept=".docx" style="display:none">
+                    </div>  
+                   
+                    
+                       
+{% comment %}         
+                        <input type="file"  id="pdf" name="pdf" accept=".docx"  class="btn btn-danger px-50" style="padding: 14px 54px;
+                        font-size: 21px;">                       
+                        <button type="button btn btn-primary" class="btn btn-danger px-50" style="padding: 14px 54px;
+                        font-size: 21px;">Select PDF file</button>
+                    
+                    {% endcomment %}
+                      
+          
+                </form>
+                <div class=""  style="display:none" id="convert_button" >
+                    <label class="upload_button"  style="
+                    color: #fff;
+                    background-color: #dc3545;
+                    border-color: #dc3545;
+                    padding: 12PX 74PX;
+                    font-size: 20px;
+                    text-align: center;">Convert to PDf</label>
+                  
+                  </div>
+                 
+          </div>
+          <div class="col-3">
+            {% comment %} <div id="preview"></div> {% endcomment %}
+           
+          </div>
+        </div>
+      </div>
+
+{% endblock %}
+
+{% block javascript %}
+
+<script>
+    $(function() {
+        // Handle file selection event
+        $('#fileInput').on('change', function() {
+          // Get selected file name
+        var fileName = $(this).val().split('\\').pop();
+          // Update label text
+        $(this).next('.input-group-text').html(fileName);
+        $('#fileInput').css('display', 'block')
+        $('#select_button').css('display','none')
+        $('#convert_button').css('display','block')
+
+
+        //# previewFile()
+         
+
+        });
+    });
+   
+    const convert_button = document.getElementById("convert_button");
+
+    convert_button.addEventListener("click", function() {
+                console.log("Button clicked!");
+            var myform = document.getElementById("upload_form");
+            var fd = new FormData(myform);
+
+            $.ajax({
+                url: "/perform_services/",
+                headers: {"X-CSRFToken": '{{csrf_token}}'},
+                data: fd,
+                cache: false,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function (dataofconfirm) {
+                    $('#fileInput').css('display', 'none')
+                    $('#select_button').css('display','none')
+                    $('#convert_button').css('display','none')
+                    $('#download_button').css('display','block')
+                    
+                    //window.location.reload()
+                    console.log("success",dataofconfirm)
+                },
+                error: function (data) {
+                    //document.getElementById('save').innerHTML = '';
+                    ShowNotify('Error', data.responseJSON.error, 'error');
+                }
+            });
+    });
+
+
+    
+    {% comment %} const download_button = document.getElementById("download_button");
+
+    download_button.addEventListener("click", function() {
+        $('#select_button').css('display','block')
+        $('#download_button').css('display','none')
+
+
+
+    } {% endcomment %}
+
+    {% comment %} function downloadFile() {
+        $.ajax({
+            url: '/download_docx/',
+            type: 'GET',
+            success: function(response) {
+                const blob = new Blob([response]);
+
+                // create a temporary URL for the blob object
+                const url = window.URL.createObjectURL(blob);
+    
+                // create a link element and set its properties
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'file_name.docx';
+    
+                // simulate a click on the link element
+                link.click();
+    
+                // clean up the temporary URL
+                window.URL.revokeObjectURL(url);
+                $('#select_button').css('display','block')
+                $('#download_button').css('display','none')
+        
+
+            },
+            error: function(xhr, status, error) {
+                // handle error response
+                console.log("error")
+            }
+        });
+    } {% endcomment %}
+
+    function downloadFile() {
+        $.ajax({
+          url: '/download_docx/',
+          type: 'GET',
+          xhrFields: {
+            responseType: 'blob'
+          },
+          success: function(response) {
+            const url = window.URL.createObjectURL(response);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'file_name.docx';
+            link.click();
+            window.URL.revokeObjectURL(url);
+            $('#select_button').css('display','block');
+            $('#download_button').css('display','none');
+          },
+          error: function(xhr, status, error) {
+            console.log("error");
+          }
+        });
+      }
+      
+
+
+        function previewFile() {
+    
+            const preview = document.getElementById('preview');
+            const file = document.querySelector('input[type=file]').files[0];
+            const reader = new FileReader();
+        
+            reader.addEventListener("load", function () {
+              const pdfViewer = `<embed src="${reader.result}" width="500" height="600" type="application/docx">`;
+              preview.innerHTML = pdfViewer;
+            }, false);
+        
+            if (file) {
+              reader.readAsDataURL(file);
+            }
+          }
+        
+        //  document.querySelector('input[type=file]').addEventListener('change', previewFile);
+       
+
+
+        
+
+  
+  
+  
+  
+  
+  
+
+      
+
+</script>
+{% endblock %}

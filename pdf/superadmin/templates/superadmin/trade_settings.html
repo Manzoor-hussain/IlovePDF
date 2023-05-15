@@ -1,0 +1,182 @@
+{% extends 'core/layout/base.html' %}
+{% block content %}
+
+    <!-- page content -->
+    <div id="stat"></div>
+    <div class="right_col" role="main">
+        <div class="row">
+            <div class="col-md-12">
+                <p class="text-dark font-weight-bold h4">Select Client ID/Broker:</p>
+
+                <div class="col-md-12">
+                    <p class=" font-weight-bold h5">Select Account:</p>
+                    <div class="row">
+
+
+                        {% for obj in demates %}
+                            <div class="x_panel tiles col-md-3 col-sm-6 m-2 pt-4 rounded">
+                                <div class="logo text-center">
+                                    <img src="{{ obj.image }}" alt=""
+                                         class="demate_profile"
+                                         style="width: 100px;  height: 100px;">
+                                </div>
+                                <div class="context text-center mt-1 ">
+                                    <p class=" text-uppercase font-weight-bold mt-1">
+                                        {{ obj.demate_title }}
+                                    </p>
+                                    <button type="button" onClick="fetchBanks('{{ obj.demate }}', '{{ obj.image }}');"
+                                            class="btn btn-primary btn-block mt-2">Setup
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade " id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Demat Bank Setup</h5>
+                        <button type="button"
+                                style="width: 50px;"
+                                class="btn btn-block btn-outline-danger" data-dismiss="modal">X
+                        </button>
+                    </div>
+
+                    <div class="modal-body" id="modalBody">
+                        <div class="row">
+                            <div class="col-md-12 col-sm-12 ">
+                                <div class="x_panel">
+                                    <div class="x_title">
+                                        <h2>Banks Management</h2>
+                                        <ul class="nav navbar-right panel_toolbox">
+
+                                        </ul>
+                                        <div class="clearfix" id="response"></div>
+                                    </div>
+                                    <div class="logo text-center">
+                                        <img src="" id="image_url" alt=""
+                                             class="demate_profile"
+                                             style="width: 100px;  height: 100px;">
+                                    </div>
+                                    <br>
+                                    <div class="x_content">
+                                        <div class="row">
+                                            <div class="col-md-6 offset-md-3">
+                                                <div class="form-group row">
+                                                    <input type="hidden" id="demate_id"/>
+
+
+                                                    <div class="table-responsive text-nowrap">
+
+                                                        <table class="table table table-bordered" id="table">
+                                                            <tr class="bg-light">
+                                                                <th>Name</th>
+                                                                <th>Status</th>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+
+
+                                                    <div class=" d-flex align-items-baseline col-md-12 m-2">
+                                                        <button type="button" class="btn btn-block btn-outline-danger"
+                                                                data-dismiss="modal" id="closed">Close
+                                                        </button>
+                                                    </div>
+
+
+                                                </div>
+                                                <div id="submitPortFolioManagement"></div>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="modal-footer">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block javascript %}
+    <script>
+        function fetchBanks(demate, image_url) {
+            $("#image_url").attr("src", image_url);
+            $('#demate_id').val(demate);
+            $('#table').empty();
+            $('#table').append('<tr class="bg-light"> <th>Name</th> <th>Status</th></tr>');
+            $.get("/core/get-all-banks/?demate_id=" + demate, function (data) {
+                for (let i = 0; i < data.banks.length; i++) {
+                    if (data.banks[i].is_active === true) {
+                        $("#table").append('<tr class="bg-light"><td>' + data.banks[i].name + '</td>' +
+                            '<td><div class="custom-control custom-switch" onclick="UserBankstatusChange(' + i + ', ' + data.banks[i].id + ', ' + demate + ');" ><input type="checkbox" checked ' +
+                            'id="index' + i + '"class="custom-control-input"/><label class="custom-control-label" ' +
+                            'id="" for=""></label></div></td></tr>');
+                    } else {
+                        $("#table").append('<tr class="bg-light"><td>' + data.banks[i].name + '</td>' +
+                            '<td><div class="custom-control custom-switch" onclick="UserBankstatusChange(' + i + ', ' + data.banks[i].id + ', ' + demate + ');"><input type="checkbox" ' +
+                            'id="index' + i + '" class="custom-control-input"/><label class="custom-control-label" ' +
+                            'id="" for=""></label></div></td></tr>');
+                    }
+
+                }
+
+                $('#saveButton').css('display', 'none');
+                $('#editButton').css('display', 'block');
+                $('#exampleModal').modal('show', {backdrop: 'static'});
+            });
+        }
+
+        function UserBankstatusChange(cnt, bank_id, demate_id) {
+            console.log('change');
+            if ($("#index" + cnt).is(':checked')) {
+                var switchStatus = $("#index" + cnt).is(':checked');
+                $("#index" + cnt).prop('checked', false);
+                var status = false;
+            } else {
+                var switchStatus = $("#index" + cnt).is(':checked');
+                $("#index" + cnt).prop('checked', true);
+                var status = true;
+            }
+
+            var fd = new FormData();
+            fd.append('bank_id', bank_id);
+            fd.append('status', status);
+            fd.append('demate_id', demate_id);
+            $.ajax({
+                url: "/core/change-bank-demate-setup/",
+                headers: {"X-CSRFToken": '{{csrf_token}}'},
+                data: fd,
+                cache: false,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function (dataofconfirm) {
+                    ShowNotify('Congratulation', 'Bank status updated', 'success');
+                }
+
+            });
+
+
+        }
+
+    </script>
+
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends 'core/layout/base.html' %}
+{% block content %}
+
+    <div id="stat"></div>
+    <div class="right_col" role="main">
+        <div class="row">
+            <div class="col-md-12">
+                <p class="text-dark font-weight-bold h4">Select Client ID/Broker:</p>
+
+                <div class="col-md-12">
+                    <p class=" font-weight-bold h5">Select Account:</p>
+                    <div class="row">
+
+                        {% for obj in demates %}
+                            <div class="x_panel tiles col-md-3 col-sm-6 m-2 pt-4 rounded">
+                                <div class="logo text-center">
+                                    <img src="{{ obj.demate_img }}" alt="" class="demate_profile"
+                                         style="width: 100px;  height: 100px;}">
+                                </div>
+                                <div class="context text-center mt-1 ">
+                                    <p class=" text-uppercase font-weight-bold mt-1">
+                                        {{ obj.demate_title }}
+                                    </p>
+                                    <p class="m-0">Client ID: <br> <span class="font-weight-bold "
+                                                                         id="myspan">{{ obj.client_id }}</span></p>
+
+                                    <button type="button"
+                                            onClick="PortFoltioSetup('{{ obj.demate }}','{{ obj.demate_img }}')"
+                                            class="btn btn-primary btn-block mt-2">Setup
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade " id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Demat Setup</h5>
+                        <button type="button"
+                                style="width: 50px;"
+                                class="btn btn-block btn-outline-danger" data-dismiss="modal">X
+                        </button>
+                    </div>
+                    <div>
+
+                        <div class="modal-body" id="modalBody">
+                            <div class="row">
+                                <div class="col-md-12 col-sm-12 ">
+                                    <div class="x_panel">
+                                        <div class="x_title">
+
+                                            <h2>PortFolio Management</h2>
+                                            <ul class="nav navbar-right panel_toolbox">
+
+                                            </ul>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                        <div class="x_content">
+                                            <div class="row">
+                                                <div class="col-md-6 offset-md-3">
+                                                    <div class="logo text-center">
+                                                        <img src="" id="demate_img"
+                                                             alt="" class="demate_profile"
+                                                             style="width: 100px;  height: 100px;">
+                                                    </div>
+
+                                                    <form action="post" autocomplete="off" id="package_1_form">
+
+
+                                                        <div class="form-group row">
+                                                            <input type="hidden" id="demate_id"/>
+
+
+                                                            <div class="col-md-12 m-2">
+                                                                <label class="control-label h6 text-dark ">Stop
+                                                                    Loss</label>
+                                                                <input type="number"
+                                                                       class="grpreq form-control  rounded"
+                                                                       id="stop_loss" name="stop_loss"
+                                                                       placeholder="Stop Loss"
+                                                                       value=""
+                                                                       autocomplete="off"/>
+                                                                <span class="help-block errorDiv"
+                                                                      id="stop_loss_error"></span>
+
+                                                            </div>
+
+                                                            <div class="col-md-12 m-2">
+                                                                <label class="control-label h6 text-dark">Target</label>
+                                                                <input type="number"
+                                                                       class="grpreq form-control  rounded"
+                                                                       id="target" name="target"
+                                                                       placeholder="Target" value=""
+                                                                       autocomplete="off"/>
+                                                                <span class="help-block errorDiv"
+                                                                      id="target_error"></span>
+
+                                                            </div>
+
+
+                                                            <div class=" d-flex align-items-baseline col-md-12 m-2">
+                                                                <button type="button"
+                                                                        class="btn btn-block btn-outline-danger"
+                                                                        data-dismiss="modal" id="closed">Close
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn btn-block btn-outline-primary"
+                                                                        onClick="submitPortFolioManagement()">
+                                                                    Submit
+                                                                </button>
+                                                            </div>
+
+
+                                                        </div>
+                                                    </form>
+                                                    <div id="loading_div"></div>
+
+
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="modal-footer">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    <script>
+
+
+        function PortFoltioSetup(demate_type, image_url) {
+            $('#exampleModal').modal('show', {backdrop: 'static'});
+            $("#demate_img").attr("src", image_url);
+            $('#demate_id').val(demate_type);
+            $('#stop_loss').val('');
+            $('#target').val('');
+            $.get("/core/portfolio_management_detail/" + demate_type, function (data) {
+                $('#stop_loss').val(data.stop_loss);
+                $('#target').val(data.target);
+                $('#saveButton').css('display', 'none');
+                $('#editButton').css('display', 'block');
+                $('#exampleModal').modal('show', {backdrop: 'static'});
+            });
+        }
+
+        function submitPortFolioManagement() {
+            var a = validateEntry('package_1_form', '');
+            if (a === "1" || a === 1) {
+                ShowNotify('Error', 'Fields are required', 'error');
+                return false;
+            }
+
+            document.getElementById('loading_div').innerHTML = "<div style='background: #fff;text-align:center'><img width='80px' src='/static/wheel.gif'/><div>";
+
+            var fd = new FormData();
+            var demate_id = $('#demate_id').val();
+            fd.append('csrfmiddlewaretoken', '{{csrf_token}}');
+            fd.append('stop_loss', $('#stop_loss').val());
+            fd.append('target', $('#target').val());
+            fd.append('demate', demate_id);
+            $.ajax({
+                url: "/core/portfolio_management/",
+                data: fd,
+                cache: false,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function (dataofconfirm) {
+                    ShowNotify('Congratulation', 'Demate Setup is done', 'success');
+                    window.location.reload();
+                },
+                error: function (data) {
+                    document.getElementById('loading_div').innerHTML = '';
+                    ShowNotify('Error', data.responseJSON.error, 'error');
+                }
+            });
+
+        }
+    </script>
+
+{% endblock %}
