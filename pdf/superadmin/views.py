@@ -12,8 +12,10 @@ from django.middleware.csrf import get_token
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
-from .models import Service
-from .serializer import ServiceSerializer
+from .models import Service, Permission, Myservice, Mypermission
+from .serializer import ServiceSerializer, PermisstionSerializer
+from django.core import serializers
+
 import pdb
 
 
@@ -22,29 +24,38 @@ import pdb
 # Create your views here.
 @login_required
 def get_index_page(request):
-    services_ = Service.objects.all()
-   
+    services_ = Myservice.objects.all()
+    print(services_,"hussain")
+
     if request.user.is_superuser:
-        services_ = Service.objects.all()
+       
+        services_ = Myservice.objects.all()
         return render(request, 'superadmin/index.html',context={'service': services_})
+    return redirect('user:dashboard')
  
     return render(request, 'user/index.html',context={'service': services_})
-@api_view(['GET'])
-def login_pagee(request):
-    render(request, 'superadmin/auth/login.html')
-
 @api_view(['POST','GET'])
 def login_page(request):
     if request.method == 'GET':
-        render(request, 'superadmin/auth/login.html')
+        user_ = request.user
+        if user_.username:
+            response = redirect('user:dashboard')
+            return response
+        else:
+            error_message = ''
+            return render(request, 'superadmin/auth/login.html', {'error_message': error_message})
         
    
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         user_ = authenticate(username=username, password=password)
+        
+       
+      
         if user_:
             login(request, user_)
+           
 
             if user_.is_superuser:
                 response = redirect('superadmin:dashboard')
@@ -54,14 +65,22 @@ def login_page(request):
             response.set_cookie(key='email', value=user_.username)
             
             return response
+        else:
+            error_message = 'Invalid username or password'
+            return render(request, 'superadmin/auth/login.html', {'error_message': error_message})
 
-    response = render(request, 'superadmin/auth/login.html')
-    return response
+        #response = render(request, 'superadmin/auth/login.html',context={"errors":"husain"})
+        #return response
 
 @api_view(['POST','GET'])
 def register_page(request):
     if request.method == 'GET':
-        return render(request, 'superadmin/auth/register.html')
+        user_ = request.user
+        if user_.username:
+            response = redirect('user:dashboard')
+            return response
+        else:
+            return render(request, 'superadmin/auth/register.html')
         
     
 
@@ -77,6 +96,15 @@ def register_page(request):
         uu = User.objects.create(first_name=name_, email=email, username=email)
         uu.set_password(password)
         uu.save()
+        try:
+            service_instances = Myservice.objects.filter(is_permisstion=True) 
+            for service_instance in service_instances:
+                Mypermission.objects.create(user=uu, service=service_instance ,is_check=True)
+        except:
+            pass
+
+      
+       
         return JsonResponse(status=200, data={})
 
     response = render(request, 'superadmin/auth/register.html')
@@ -85,8 +113,19 @@ def register_page(request):
 
 @login_required
 def logout_page(request):
+   
+    response = redirect('/login')  # Redirect to the desired page after logout
+    
+    # Set cookies to expire in the past
+    response.delete_cookie('name')
+    response.delete_cookie('email')
+    response.delete_cookie('sessionid')
+    response.delete_cookie('csrftoken')
     logout(request)
-    return redirect('/login')
+    # Add more delete_cookie() calls for each cookie you want to remove
+    
+    return response
+    #return redirect('/login')
 @api_view(['GET'])
 def forget_password(request):
     return render(request, 'superadmin/auth/forgetpassword.html')
@@ -162,16 +201,16 @@ def update_password(request):
 @api_view(['POST'])
 @login_required
 def delete_service(request):
-    Service.objects.filter(id=request.data['id']).delete()
+    Myservice.objects.filter(id=request.data['id']).delete()
     return Response(status=200)
 
 
 @api_view(['POST'])
 @login_required
 def change_service(request):
-    dm_ = Service.objects.get(id=request.POST['id'])
+    dm_ = Myservice.objects.get(id=request.POST['id'])
     is_permission_ = True
-    if dm_.status:
+    if dm_.is_permisstion:
         is_permission_ = False
     dm_.is_permisstion = is_permission_
     dm_.save()
@@ -181,7 +220,7 @@ def change_service(request):
 @api_view(['GET'])
 @login_required
 def get_service_detail(request):
-    service_ = Service.objects.get(id=request.GET.get('id'))
+    service_ = Myservice.objects.get(id=request.GET.get('id'))
     data_ = ServiceSerializer(service_)
     data_ = data_.data
     return Response(status=200, data=data_)
@@ -194,21 +233,56 @@ def add_service(request):
     title_ = request.POST['title']
     is_permisstion = request.POST.getlist('is_permisstion')
     description = request.POST['description']
+
+    print("description",is_permisstion)
     is_permisstion = ','.join(is_permisstion)
+    if not is_permisstion:
+        is_permisstion = 'True'
+        
+   
   
     if not id_:
-        Service.objects.create(user_id=request.user.id,title=title_, is_permisstion=is_permisstion, description=description)
+        Myservice.objects.create(title=title_, is_permisstion=is_permisstion, description=description)
         return Response(status=200)
 
-    dd = Service.objects.get(id=id_)
+    dd = Myservice.objects.get(id=id_)
     dd.description = description
     dd.title = title_
-    print("permission", is_permisstion)
-    if is_permisstion == ' ':
-        print("permission inside", is_permisstion)
-        is_permisstion = False
     dd.is_permisstion = is_permisstion
     dd.save()
     return Response(status=200)
 
+@api_view(['GET'])
+@login_required
+def get_user_detail(request):
+    service = Myservice.objects.all()
+    permission = Mypermission.objects.all()
+    users = User.objects.filter(is_superuser=False).exclude(username="hussain")
+    return render(request, 'superadmin/user_permission.html', context ={"permission":permission,"users":users,"service":service})
 
+@api_view(['GET'])
+@login_required
+def get_user_services(request):
+    username_ = request.GET.get('username', None)
+    user= User.objects.filter(username=username_).last()
+    mypermissions = Mypermission.objects.filter(user=user)
+    myservices = Myservice.objects.filter(mypermission__user=user)
+    json_data = serializers.serialize('json', myservices)   
+    return Response(status=200, data=json_data)
+
+@api_view(['POST'])
+@login_required
+def change_permission(request):
+    service_ = Myservice.objects.get(id=request.POST['service'])
+    user_ = User.objects.get(username=request.POST['username'])
+    ischeck_ = request.POST['ischeck']
+    if ischeck_ == 'true':
+        permission = Mypermission.objects.create(user=user_, service=service_, is_check=True)
+       
+    else:
+        permission = Mypermission.objects.filter(user=user_, service=service_ , is_check=True)
+        permission.delete()
+
+    return Response(status=200)
+
+    

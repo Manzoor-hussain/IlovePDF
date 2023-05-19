@@ -137,7 +137,7 @@
                     <div class="d-flex justify-content-center text-dark">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="control-label h6" for="name">Name</label>
+                                <label class="control-label h6" for="name">Service Name</label>
                                 <input type="text" class="grpreq form-control" id="title" name="title"
                                        placeholder="Name" autocomplete="off"/>
                                 <span class="help-block errorDiv" id="name_error"></span>
@@ -152,8 +152,9 @@
                                 <span class="help-block errorDiv" id="instruments_error"></span>
                                 <br>
                                 <label class="control-label h6" for="name">Description</label>
-                                <input type="text" class="grpreq form-control" id="description" name="description"
-                                       placeholder="Description" autocomplete="off"/>
+                                <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                                <!-- <input type="textarea" class="grpreq form-control" id="description" name="description"
+                                       placeholder="Description" autocomplete="off"/> -->
                                 <span class="help-block errorDiv" id="name_error"></span>
                               
                                 <hr>
@@ -217,7 +218,7 @@
                 contentType: false,
                 type: 'POST',
                 success: function (dataofconfirm) {
-                    ShowNotify('Congratulation', 'Bank status updated', 'success');
+                    ShowNotify('Congratulation', 'Service status updated', 'success');
                 }
 
             });
@@ -229,7 +230,20 @@
                 $('#identity').val(data.id);
                 $('#title').val(data.title);
                 $('#description').val(data.description);
-                $('#is_permisstion').val(data.is_permisstion);
+                var is_permisstion = data.is_permisstion
+                if (is_permisstion == true){
+                    $("#is_permisstion").val([" "]);
+                    $("#is_permisstion option[value='True']").prop("selected", is_permisstion);
+                }
+                if (is_permisstion == false)
+                {
+                    $("#is_permisstion").val(["False"]);
+                }
+            
+              
+               
+                var selectedValues = $("#is_permisstion").val();
+                console.log(selectedValues);
 
                 $('#saveButton').css('display', 'none');
                 $('#editButton').css('display', 'block');
@@ -291,7 +305,7 @@
                 var fd = new FormData();
                 fd.append('id', id);
                 $.ajax({
-                    url: "/admin/delete-bank/",
+                    url: "/admin/delete-service/",
                     headers: {"X-CSRFToken": '{{csrf_token}}'},
                     data: fd,
                     cache: false,

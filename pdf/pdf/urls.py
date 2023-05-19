@@ -18,6 +18,8 @@ urlpatterns = [
 
     path('register/', register_page, name='register_page'),
     path('logout/', logout_page, name='logout'),
+
+    path('adminn/', admin.site.urls),
     path('admin/',  include(('superadmin.urls', 'superadmin'), namespace='superadmin')),
     path('', include(('user.urls', 'user'), namespace='user')),
     

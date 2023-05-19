@@ -2,14 +2,14 @@
     <div class="nav_menu">
         <div class="nav_left mt-1 ml-4"> 
             <label class="fa-2x">
-                <span class="text-dark">Split PDF</span>
-                <span class="text-dark">Merge PDF</span>
+                <span class="text-dark">Resume Formatter</span>
+              
              </label>
 
         </div>
         <div class="nav_right mt-1">
-          
-            {% if request.user.email == request.COOKIES.email %}
+
+            {% if request.user.email %}
             <a href="{% url 'logout' %}">
                 <button type="button" class="btn btn-danger btn-lg">Logout</button>
                 </a>

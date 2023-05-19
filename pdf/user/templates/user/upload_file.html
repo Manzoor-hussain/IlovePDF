@@ -42,26 +42,60 @@
     padding: 12PX 96PX;
   }
   
+    .loader-container {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+    }
+    .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 2s linear infinite;
+        margin: 0 auto;
+    }
+    .loader-text {
+        margin-top: 10px;
+        text-align: center;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+
+
+
+
+
 {% endblock %}
 
 
 {% block content %}
    
     <div class="container">
+       
         <div class="row">
+      
+        
+          
           <div class="col-3">
-            {% comment %} <div class="custom-file mb-3">
-                <input type="file" class="custom-file-input" id="customFile">
-                <label class="custom-file-label" for="customFile">Choose file</label>
-              </div> {% endcomment %}
+
+           
              
            
           </div>
           <div class="col-5" style="text-align: center;">
            
-            <h1>PDF to WORD Converter</h1>
-            <p>Convert your PDF to WORD documents with incredible accuracy.
-                Powered by Solid Documents.</p>
+            <h1>Convert to {{ service_name }}</h1>
+            <p>Format your unformatted Resume by using our AI powered solution with incredible accuracy.
+                Developed by Machine learning 1.</p>
+
                 <div class=""  style="display:none" id="download_button">
                     <a href="javascript:downloadFile();" class="btn btn-danger" style="padding: 12PX 74PX;
                     font-size: 20px;
@@ -78,25 +112,34 @@
                         border-color: #dc3545;
                         padding: 12PX 74PX;
                         font-size: 20px;
-                        text-align: center;">Select PDF File</label>
+                        text-align: center;">Select Word File</label>
                       
                       </div>
+                    
+                      <input type="hidden" name="title" id="title" value=" {{ service_name }}">
+                      <input type="hidden" name="user" id="user" value=" {{ request.user.id }}">
                     <div>
                         <input type="file" class="form-control" name="pdf" id="fileInput" accept=".docx" style="display:none">
                     </div>  
                    
                     
                        
-{% comment %}         
-                        <input type="file"  id="pdf" name="pdf" accept=".docx"  class="btn btn-danger px-50" style="padding: 14px 54px;
-                        font-size: 21px;">                       
-                        <button type="button btn btn-primary" class="btn btn-danger px-50" style="padding: 14px 54px;
-                        font-size: 21px;">Select PDF file</button>
-                    
-                    {% endcomment %}
+
                       
           
                 </form>
+                <div class="loader-container" id="loader_container">
+                  <div class="loader"></div>
+                  <div class="loader-text"></div>
+                  <br>
+              </div>
+              <div class="loader-text" id="loader-text" style="display: none;">Taking time for getting response from api</div>
+              <div id="mybar_main" style="display:none;">
+               
+                <div id="myBar"></div>
+              </div>
+             
+                
                 <div class=""  style="display:none" id="convert_button" >
                     <label class="upload_button"  style="
                     color: #fff;
@@ -104,17 +147,23 @@
                     border-color: #dc3545;
                     padding: 12PX 74PX;
                     font-size: 20px;
-                    text-align: center;">Convert to PDf</label>
+                    text-align: center;">Click to Convert</label>
                   
                   </div>
                  
           </div>
+        
           <div class="col-3">
-            {% comment %} <div id="preview"></div> {% endcomment %}
+          
+            
            
           </div>
+         
+
+         
         </div>
       </div>
+     
 
 {% endblock %}
 
@@ -134,17 +183,35 @@
 
 
         //# previewFile()
+       
          
 
         });
     });
+  
+    
+ 
    
     const convert_button = document.getElementById("convert_button");
 
     convert_button.addEventListener("click", function() {
-                console.log("Button clicked!");
+              
+                //runProgressBar(120);
+
+         
+           
+            $('#mybar_main').css('display','block')
+            $('#loader-text').css('display','block')
+          
+            $('#fileInput').css('display', 'none')
+            $('#select_button').css('display','none')
+            $('#convert_button').css('display','none')
+
+            
             var myform = document.getElementById("upload_form");
             var fd = new FormData(myform);
+            var i = 0;
+            move(i)
 
             $.ajax({
                 url: "/perform_services/",
@@ -154,14 +221,21 @@
                 processData: false,
                 contentType: false,
                 type: 'POST',
+
+             
                 success: function (dataofconfirm) {
+                   move(99)
                     $('#fileInput').css('display', 'none')
                     $('#select_button').css('display','none')
                     $('#convert_button').css('display','none')
+                    
+                    $('#loader_container').css('display','none')
+                    $('#mybar_main').css('display','none')
+                    $('#loader-text').css('display','none')
                     $('#download_button').css('display','block')
                     
                     //window.location.reload()
-                    console.log("success",dataofconfirm)
+                  
                 },
                 error: function (data) {
                     //document.getElementById('save').innerHTML = '';
@@ -169,20 +243,77 @@
                 }
             });
     });
+   
+    function move(i) {
+      if (i == 0) {
+        i = 1;
+        var elem = document.getElementById("myBar");
+        var width = 1;
+        var id = setInterval(frame, 1800);
+        function frame() {
+          if (width >= 100) {
+            clearInterval(id);
+            i = 0;
+          } else {
+            width++;
+            elem.style.width = width + "%";
+          }
+        }
+      }
+    }
 
 
+    function downloadFile() {
+        $.ajax({
+          url: '/download_docx/',
+          type: 'GET',
+          xhrFields: {
+          responseType: 'blob'
+          },
+          success: function(response) {
+            const url = window.URL.createObjectURL(response);
+            const link = document.createElement('a');
+            link.href = url;
+            var title = $('#title').val();
+            title=title.replaceAll(" ","-");
+            title='output'+title+'.docx'
+            link.download =title
     
-    {% comment %} const download_button = document.getElementById("download_button");
+           
 
-    download_button.addEventListener("click", function() {
-        $('#select_button').css('display','block')
-        $('#download_button').css('display','none')
+            // if (title.includes("Expert")) {
+            //  link.download = 'output_expert_resource.docx';
+            // }
+            // if (title.includes("Joss")) {
+            //   link.download = 'output_joss_search.docx';
+            // }
+            // if (title.includes("ASPION")) {
+            //   link.download = 'output_aspion_search.docx';
+            // }
+            // if (title.includes("Clarus")) {
+            //   link.download = 'output_clarus.docx';
+            // }
+            
+            link.click();
+            window.URL.revokeObjectURL(url);
+            $('#select_button').css('display','block');
+            $('#download_button').css('display','none');
+          },
+          error: function(xhr, status, error) {
+            console.log("error");
+          }
+        });
+      }
+
+
+// Call the runProgressBar function with a duration of 3 minutes (180 seconds)
 
 
 
-    } {% endcomment %}
 
-    {% comment %} function downloadFile() {
+  
+    {% comment %} 
+    function downloadFile() {
         $.ajax({
             url: '/download_docx/',
             type: 'GET',
@@ -195,7 +326,7 @@
                 // create a link element and set its properties
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = 'file_name.docx';
+                link.download = 'output_expert_resource.docx';
     
                 // simulate a click on the link element
                 link.click();
@@ -214,28 +345,6 @@
         });
     } {% endcomment %}
 
-    function downloadFile() {
-        $.ajax({
-          url: '/download_docx/',
-          type: 'GET',
-          xhrFields: {
-            responseType: 'blob'
-          },
-          success: function(response) {
-            const url = window.URL.createObjectURL(response);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'file_name.docx';
-            link.click();
-            window.URL.revokeObjectURL(url);
-            $('#select_button').css('display','block');
-            $('#download_button').css('display','none');
-          },
-          error: function(xhr, status, error) {
-            console.log("error");
-          }
-        });
-      }
       
 
 

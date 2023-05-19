@@ -27,7 +27,9 @@ SECRET_KEY = 'django-insecure-%tz^pmtb1m%@3n&&qiou1wy@l6c=0c18_+czwdb!f)fko4c%7y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+# CSRF_TRUSTED_ORIGINS = ['http://3.128.188.169/', 'http://3.128.188.169',
+#                         'http://localhost/']
 
 
 # Application definition
@@ -39,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.postgres',
     'user',
     'superadmin',
     'rest_framework',
@@ -137,3 +138,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
+

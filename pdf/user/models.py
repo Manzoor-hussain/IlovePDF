@@ -8,3 +8,8 @@ class MyModel(models.Model):
 class Pdf(models.Model):
     pdf = models.FileField(upload_to='pdf_input')
 
+class Storefile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    pdf = models.FileField(upload_to='pdf_input')
+    
+
